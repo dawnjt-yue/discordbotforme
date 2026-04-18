@@ -1,0 +1,9 @@
+{
+  "deploy": {
+    "env": {
+      "DISCORD_BOT_TOKEN": "$DISCORD_BOT_TOKEN",
+      "CLIENT_ID": "$CLIENT_ID",
+      "ZHIPU_API_KEY": "$ZHIPU_API_KEY"
+    }
+  }
+}
