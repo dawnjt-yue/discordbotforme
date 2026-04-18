@@ -171,11 +171,39 @@ async function registerCommands() {
   }
 }
 
+// 强制重新注册命令
+async function forceRegisterCommands() {
+  const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_BOT_TOKEN);
+  
+  try {
+    console.log('强制删除现有命令...');
+    await rest.put(
+      Routes.applicationCommands(process.env.CLIENT_ID),
+      { body: [] }
+    );
+    
+    console.log('重新注册斜杠命令...');
+    await rest.put(
+      Routes.applicationCommands(process.env.CLIENT_ID),
+      { body: commands }
+    );
+    
+    console.log('斜杠命令强制注册成功');
+  } catch (error) {
+    console.error('命令注册失败:', error);
+  }
+}
+
 // Bot启动事件
 client.once('ready', () => {
   console.log(`Logged in as ${client.user.tag}`);
   console.log('Bot is ready!');
   console.log('可用角色：爱尔奎特、猫姬');
+  
+  // 显示当前可用人设
+  console.log('当前可用人设:');
+  console.log('1. 爱尔奎特 - arcueid');
+  console.log('2. 猫姬 - neko');
 });
 
 // 对话历史存储
@@ -211,11 +239,17 @@ client.on('messageCreate', async message => {
       let userMessage = message.content.replace(/!phantasmoon\s*/, '').replace(/!ai\s*/, '').replace(/<@\d+>\s*/, '').trim();
       
       if (!userMessage) {
-        message.reply('请输入您的问题！\n\n使用方法：`!glm 问题内容` 或 `@bot名称 问题内容`\n\n可用角色：爱尔奎特、猫姬');
+        message.reply('请输入您的问题！\n\n使用方法：`!phantasmoon 问题内容` 或 `@bot名称 问题内容`\n\n可用角色：爱尔奎特、猫姬');
         return;
       }
 
-      const thinkingMessage = await message.channel.send('让我看看～', '这个应该这样！');
+      // 修复：使用正确的embed格式
+      const thinkingMessage = await message.channel.send({
+        embeds: [{
+          color: 0x0099ff,
+          description: '让我看看～这个应该这样！'
+        }]
+      });
 
       // 获取用户角色
       const userCharacter = userCharacters.get(message.author.id) || 'arcueid';
@@ -265,6 +299,9 @@ client.on('interactionCreate', async interaction => {
 
   const { commandName } = interaction;
 
+  // 添加日志
+  console.log(`收到命令: ${commandName} 来自 ${interaction.user.tag}`);
+  
   if (commandName === 'phantasmoon') {
     const question = interaction.options.getString('question');
     const character = interaction.options.getString('character') || userCharacters.get(interaction.user.id) || 'arcueid';
@@ -306,6 +343,7 @@ client.on('interactionCreate', async interaction => {
     }
   } else if (commandName === 'setcharacter') {
     const characterType = interaction.options.getString('character');
+    console.log(`设置角色为: ${characterType}`);
     userCharacters.set(interaction.user.id, characterType);
     const character = personas[characterType];
     await interaction.reply(`✅ 已切换为${character.name}模式\n${character.greeting}`);
@@ -341,40 +379,7 @@ client.on('interactionCreate', async interaction => {
   }
 });
 
-// 启动Bot
-async function startBot() {
-  await registerCommands();
-  await client.login(process.env.DISCORD_BOT_TOKEN);
-}
-
-startBot().catch(console.error);
-
-// 在index.js中添加强制重新注册命令的功能
-async function forceRegisterCommands() {
-  const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_BOT_TOKEN);
-  
-  try {
-    console.log('强制删除现有命令...');
-    // 先删除所有现有命令
-    await rest.put(
-      Routes.applicationCommands(process.env.CLIENT_ID),
-      { body: [] }
-    );
-    
-    console.log('重新注册斜杠命令...');
-    // 然后重新注册新命令
-    await rest.put(
-      Routes.applicationCommands(process.env.CLIENT_ID),
-      { body: commands }
-    );
-    
-    console.log('斜杠命令强制注册成功');
-  } catch (error) {
-    console.error('命令注册失败:', error);
-  }
-}
-
-// 修改启动函数
+// 启动Bot - 使用强制重新注册版本
 async function startBot() {
   console.log('开始启动Bot...');
   
@@ -389,23 +394,6 @@ async function startBot() {
   
   console.log('Bot启动完成');
 }
-// 在Bot启动时显示当前人设配置
-client.once('ready', () => {
-  console.log(`Logged in as ${client.user.tag}`);
-  console.log('Bot is ready!');
-  console.log('当前可用人设:');
-  console.log('1. 爱尔奎特 - arcueid');
-  console.log('2. 猫姬 - neko');
-    
-// 在命令处理中添加日志
-client.on('interactionCreate', async interaction => {
-  if (!interaction.isCommand()) return;
 
-  console.log(`收到命令: ${interaction.commandName} 来自 ${interaction.user.tag}`);
-  
-  if (interaction.commandName === 'setcharacter') {
-    const characterType = interaction.options.getString('character');
-    console.log(`设置角色为: ${characterType}`);
-    // ... 其他代码
-  }
-});
+// 启动Bot
+startBot().catch(console.error)
