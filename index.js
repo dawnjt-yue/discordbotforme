@@ -348,3 +348,64 @@ async function startBot() {
 }
 
 startBot().catch(console.error);
+
+// 在index.js中添加强制重新注册命令的功能
+async function forceRegisterCommands() {
+  const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_BOT_TOKEN);
+  
+  try {
+    console.log('强制删除现有命令...');
+    // 先删除所有现有命令
+    await rest.put(
+      Routes.applicationCommands(process.env.CLIENT_ID),
+      { body: [] }
+    );
+    
+    console.log('重新注册斜杠命令...');
+    // 然后重新注册新命令
+    await rest.put(
+      Routes.applicationCommands(process.env.CLIENT_ID),
+      { body: commands }
+    );
+    
+    console.log('斜杠命令强制注册成功');
+  } catch (error) {
+    console.error('命令注册失败:', error);
+  }
+}
+
+// 修改启动函数
+async function startBot() {
+  console.log('开始启动Bot...');
+  
+  // 强制重新注册命令
+  await forceRegisterCommands();
+  
+  // 等待几秒确保命令注册完成
+  await new Promise(resolve => setTimeout(resolve, 5000));
+  
+  // 登录Discord
+  await client.login(process.env.DISCORD_BOT_TOKEN);
+  
+  console.log('Bot启动完成');
+}
+// 在Bot启动时显示当前人设配置
+client.once('ready', () => {
+  console.log(`Logged in as ${client.user.tag}`);
+  console.log('Bot is ready!');
+  console.log('当前可用人设:');
+  console.log('1. 爱尔奎特 - arcueid');
+  console.log('2. 猫姬 - neko');
+    
+// 在命令处理中添加日志
+client.on('interactionCreate', async interaction => {
+  if (!interaction.isCommand()) return;
+
+  console.log(`收到命令: ${interaction.commandName} 来自 ${interaction.user.tag}`);
+  
+  if (interaction.commandName === 'setcharacter') {
+    const characterType = interaction.options.getString('character');
+    console.log(`设置角色为: ${characterType}`);
+    // ... 其他代码
+  }
+});
