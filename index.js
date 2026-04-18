@@ -195,7 +195,7 @@ async function forceRegisterCommands() {
 }
 
 // Bot启动事件
-client.once('ready', () => {
+client.once('clientReady', () => {
   console.log(`Logged in as ${client.user.tag}`);
   console.log('Bot is ready!');
   console.log('可用角色：爱尔奎特、猫姬');
